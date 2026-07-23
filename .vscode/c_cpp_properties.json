@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/rudycazabon/Libraries/vulkan-sdk/1.4.350.1/x86_64/include/slang"
+            ],
+            "defines": [],
+            "compilerPath": "/home/rudycazabon/miniconda3/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
