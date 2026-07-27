@@ -6,18 +6,25 @@
 #include <cstring>
 
 #include <slang.h>
-#include <slang-com-ptr.h>
 #include <slang-gfx.h>
+#include <slang-com-ptr.h>
+#include <slang-com-helper.h>
 
 using namespace Slang;
 using namespace gfx;
 
 struct UtmInput {
-    double easting; double northing;
-    int zone; int isNorthernHemisphere; int padding;
+    double easting; 
+    double northing;
+    int zone; 
+    int isNorthernHemisphere; 
+    int padding;
 };
 
-struct OutputCoords { double x; double y; };
+struct OutputCoords { 
+    double x; 
+    double y; 
+};
 
 int main() {
     const size_t datasetSize = 1000000;
