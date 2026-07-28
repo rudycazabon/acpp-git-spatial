@@ -1,52 +1,65 @@
 import slangpy as spy
-import pathlib
 import numpy as np
+import pathlib
 
-# Create a SlangPy device and use the local folder for Slang includes
 device = spy.create_device(include_paths=[
         pathlib.Path(__file__).parent.absolute(),
 ])
 
-# Load the module
-module = spy.Module.load_from_file(device, "example.slang")
 
-# Create two 2D tensors of size 16x16
-image_1 = spy.Tensor.empty(device, dtype=module.Pixel, shape=(16, 16))
-image_2 = spy.Tensor.empty(device, dtype=module.Pixel, shape=(16, 16))
-
-# Populate the first tensor using a cursor
-cursor_1 = image_1.cursor()
-for x in range(16):
-    for y in range(16):
-        cursor_1[x + y * 16].write({
-            'r': (x + y) / 32.0,
-            'g': 0,
-            'b': 0,
-        })
-cursor_1.apply()
-
-# Populate the second tensor directly from a NumPy array
-image_2.copy_from_numpy(0.1 * np.random.rand(16 * 16 * 3).astype(np.float32))
-
-# Call the module's add function
-result = module.add(image_1, image_2)
-
-# Pre-allocate the result tensor
-result = spy.Tensor.empty(device, dtype=module.Pixel, shape=(16, 16))
-module.add(image_1, image_2, _result=result)
-
-# Read and print pixel data using a cursor
-result_cursor = result.cursor()
-for x in range(16):
-    for y in range(16):
-        pixel = result_cursor[x + y * 16].read()
-        print(f"Pixel ({x},{y}): {pixel}")
-
-# Display the result with tev (https://github.com/Tom94/tev)
-tex = device.create_texture(
-    data=result.to_numpy(),
-    width=16,
-    height=16,
-    format=spy.Format.rgb32_float
+program = device.load_program(
+    module_name="spatial_transform.slang",
+    entry_point_names=["computeMain"],
 )
-spy.tev.show(tex)
+kernel = device.create_compute_kernel(
+    program=program
+)
+
+# UtmInput: double, double, int, int, int -> padded to 32 bytes (align 8)
+utm_dtype = np.dtype({
+    'names':   ['easting', 'northing', 'zone', 'isNorthernHemisphere', 'padding'],
+    'formats': [np.float64, np.float64, np.int32, np.int32, np.int32],
+}, align=True)
+
+# OutputCoords: double, double -> 16 bytes, no padding needed
+coords_dtype = np.dtype({
+    'names':   ['x', 'y'],
+    'formats': [np.float64, np.float64],
+}, align=True)
+
+print(utm_dtype.itemsize)     # sanity check -> should be 32
+print(coords_dtype.itemsize)  # -> should be 16
+
+print(kernel.reflection.inputBuffer)   # inspect what slangpy sees
+print(kernel.reflection.outputBuffer)
+
+n = 1024
+
+utm_data = np.zeros(n, dtype=utm_dtype)
+utm_data['easting'] = 500000.0 + np.random.randn(n) * 1000
+utm_data['northing'] = 4649776.0 + np.random.randn(n) * 1000
+utm_data['zone'] = 33
+utm_data['isNorthernHemisphere'] = 1
+
+input_buffer = device.create_buffer(
+    element_count=n,
+    resource_type_layout=kernel.reflection.inputBuffer,
+    usage=spy.BufferUsage.shader_resource,
+    data=utm_data,
+)
+
+output_buffer = device.create_buffer(
+    element_count=n,
+    resource_type_layout=kernel.reflection.outputBuffer,
+    usage=spy.BufferUsage.unordered_access,
+)
+
+
+kernel.dispatch(
+	thread_count=[n, 1, 1], 
+	inputBuffer=input_buffer, 
+	outputBuffer=output_buffer
+)
+
+result = output_buffer.to_numpy().view(coords_dtype)
+print(result['x'][:5], result['y'][:5])
