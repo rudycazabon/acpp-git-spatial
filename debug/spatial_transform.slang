@@ -70,9 +70,7 @@ void computeMain(uint3 threadId : SV_DispatchThreadID) {
 
     // Project to Final Ellipsoidal Mercator
     double e_m = sqrt(e2_dst);
-    // outputBuffer[id].x = c.grs80_a * outLon;
-    outputBuffer[id].x = 12345.0;
-    // outputBuffer[id].y = c.grs80_a * log(tan((3.1415926535897932 / 4.0) + (outLat / 2.0)) *
-    //                pow((1.0 - e_m * sin(outLat)) / (1.0 + e_m * sin(outLat)), e_m / 2.0));
-    outputBuffer[id].y = 54321.0;
+    outputBuffer[id].x = c.grs80_a * outLon;
+    outputBuffer[id].y = c.grs80_a * log(tan((3.1415926535897932 / 4.0) + (outLat / 2.0)) * 
+                   pow((1.0 - e_m * sin(outLat)) / (1.0 + e_m * sin(outLat)), e_m / 2.0));
 }

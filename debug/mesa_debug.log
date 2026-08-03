@@ -1,0 +1,24 @@
+numpy itemsize: 8
+ReflectionCursor(type=TypeLayoutReflection(
+    name = "StructuredBuffer",
+    kind = resource,
+    shape = structured_buffer,
+    access = read,
+    element_type_layout = TypeLayoutReflection(
+      name = "InputData",
+      kind = struct,
+      size = 8,
+      stride = 8,
+      fields = [
+        VariableLayoutReflection(
+          name = "value",
+          type_layout = TypeLayoutReflection(
+            kind = scalar,
+            scalar_type = float64
+          )
+        ),
+      ]
+    )
+  ))
+Expected: [ 2.  4.  6.  8. 10. 12. 14. 16.]
+Got:      [0. 0. 0. 0. 0. 0. 0. 0.]
